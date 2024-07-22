@@ -1,4 +1,3 @@
-
 #include <Wire.h>
 #include <Adafruit_GFX.h>
 #include <Adafruit_SH110X.h>
@@ -19,6 +18,7 @@ const short BUTTON_UP_PIN = 21;
 const short BUTTON_DOWN_PIN = 7;
 
 const short VIBRATOR_PIN = 3;
+const short BATTERY_PIN = A2;
 
 // Game pieces
 static const unsigned char PROGMEM logo[] = {
@@ -148,15 +148,13 @@ bool gameOver = false;
 
 bool grid[10][18];
 
-// Button states
-bool buttonLeftState, buttonRightState, buttonUpState, buttonUpPressed;
-
-// Debounce variables
+// DEBOUNCE
 const unsigned long DEBOUNCE_DELAY = 100;
 const unsigned long INITIAL_SLIDE_DELAY = 200;
 const unsigned long CONTINUOUS_SLIDE_DELAY = 50;
 
-// Push button variables
+// PUSH BUTTONS
+bool buttonLeftState, buttonRightState, buttonUpState, buttonUpPressed;
 unsigned long lastLeftButtonPress = 0;
 unsigned long lastRightButtonPress = 0;
 bool leftButtonState = HIGH;
@@ -165,6 +163,12 @@ bool leftButtonHeld = false;
 bool rightButtonHeld = false;
 unsigned long lastLeftMoveTime = 0;
 unsigned long lastRightMoveTime = 0;
+
+// BATTERY
+const float referenceVoltage = 3.3;
+const float dividerRatio = 2.0;
+const float minVoltage = 3.0; // Voltage at 0% charge
+const float maxVoltage = 4.2; // Voltage at 100% charge
 
 Adafruit_SH1106G display(128, 64, &Wire, -1);
 
@@ -200,6 +204,8 @@ void setup() {
 // --- LOOP ------
 //-------------------
 void loop() {
+  checkBattery();
+
   if (!gameOver) {
     if (millis() - timer > interval) {
       checkLines();
@@ -621,5 +627,18 @@ void drawText(char text[], short length, int x, int y) {
 
   for (short i = 0; i < length; i++) {
     display.write(text[i]);
+  }
+}
+
+void checkBattery() {
+  int sensorValue = analogRead(BATTERY_PIN); // Read the analog input
+  float voltage = sensorValue * (referenceVoltage / 4095.0); // Calculate the measured voltage
+
+  if (voltage < 3.3F) {
+    display.setTextSize(1);
+    display.setTextColor(SH110X_WHITE);
+    display.setCursor(30, 2);
+    display.println("BAT");
+    display.display();
   }
 }

@@ -149,6 +149,15 @@ bool gameOver = false;
 bool grid[10][18];
 bool buttonLeftPressed, buttonRightPressed, buttonUpPressed;
 
+// Button states
+bool buttonLeftState, buttonRightState, buttonUpState;
+bool lastButtonLeftState, lastButtonRightState, lastButtonUpState;
+
+// Debounce variables
+unsigned long lastDebounceTimeLeft = 0;
+unsigned long lastDebounceTimeRight = 0;
+const unsigned long debounceDelay = 50;
+
 Adafruit_SH1106G display(128, 64, &Wire, -1);
 
 //-------------------
@@ -160,6 +169,10 @@ void setup() {
   pinMode(BUTTON_UP_PIN, INPUT_PULLUP);
   pinMode(BUTTON_DOWN_PIN, INPUT_PULLUP);
   pinMode(VIBRATOR_PIN, OUTPUT);
+
+  lastButtonLeftState = digitalRead(BUTTON_LEFT_PIN);
+  lastButtonRightState = digitalRead(BUTTON_RIGHT_PIN);
+  lastButtonUpState = digitalRead(BUTTON_UP_PIN);
 
   display.begin(I2C_ADDRESS, true);
   display.setRotation(3);
@@ -250,25 +263,45 @@ void handleDownButton() {
 }
 
 void handleRightButton() {
-  if (!digitalRead(BUTTON_RIGHT_PIN)) {
-    if (!buttonRightPressed) {
-      movePieceRight();
-      buttonRightPressed = true;
-    }
-  } else {
-    buttonRightPressed = false;
+  bool currentRightState = digitalRead(BUTTON_RIGHT_PIN);
+
+  if (currentRightState != lastButtonRightState) {
+    lastDebounceTimeRight = millis();
   }
+  
+  if ((millis() - lastDebounceTimeRight) > debounceDelay) {
+    // Only toggle the state if the button state has changed
+    if (currentRightState != buttonRightState) {
+      buttonRightState = currentRightState;
+      // Move piece right if button is pressed
+      if (buttonRightState == LOW) {
+        movePieceRight();
+      }
+    }
+  }
+
+  lastButtonRightState = currentRightState;
 }
 
 void handleLeftButton() {
-  if (!digitalRead(BUTTON_LEFT_PIN)) {
-    if (!buttonLeftPressed) {
-      movePieceLeft();
-      buttonLeftPressed = true;
-    }
-  } else {
-    buttonLeftPressed = false;
+  bool currentLeftState = digitalRead(BUTTON_LEFT_PIN);
+
+  if (currentLeftState != lastButtonLeftState) {
+    lastDebounceTimeLeft = millis();
   }
+
+  if ((millis() - lastDebounceTimeLeft) > debounceDelay) {
+    // Only toggle the state if the button state has changed
+    if (currentLeftState != buttonLeftState) {
+      buttonLeftState = currentLeftState;
+      // Move piece left if button is pressed
+      if (buttonLeftState == LOW) {
+        movePieceLeft();
+      }
+    }
+  }
+
+  lastButtonLeftState = currentLeftState;
 }
 
 void rotatePiece() {

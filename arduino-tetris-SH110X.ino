@@ -147,16 +147,24 @@ long timer, delayer;
 bool gameOver = false;
 
 bool grid[10][18];
-bool buttonLeftPressed, buttonRightPressed, buttonUpPressed;
 
 // Button states
-bool buttonLeftState, buttonRightState, buttonUpState;
-bool lastButtonLeftState, lastButtonRightState, lastButtonUpState;
+bool buttonLeftState, buttonRightState, buttonUpState, buttonUpPressed;
 
 // Debounce variables
-unsigned long lastDebounceTimeLeft = 0;
-unsigned long lastDebounceTimeRight = 0;
-const unsigned long debounceDelay = 50;
+const unsigned long DEBOUNCE_DELAY = 100;
+const unsigned long INITIAL_SLIDE_DELAY = 200;
+const unsigned long CONTINUOUS_SLIDE_DELAY = 50;
+
+// Push button variables
+unsigned long lastLeftButtonPress = 0;
+unsigned long lastRightButtonPress = 0;
+bool leftButtonState = HIGH;
+bool rightButtonState = HIGH;
+bool leftButtonHeld = false;
+bool rightButtonHeld = false;
+unsigned long lastLeftMoveTime = 0;
+unsigned long lastRightMoveTime = 0;
 
 Adafruit_SH1106G display(128, 64, &Wire, -1);
 
@@ -169,10 +177,6 @@ void setup() {
   pinMode(BUTTON_UP_PIN, INPUT_PULLUP);
   pinMode(BUTTON_DOWN_PIN, INPUT_PULLUP);
   pinMode(VIBRATOR_PIN, OUTPUT);
-
-  lastButtonLeftState = digitalRead(BUTTON_LEFT_PIN);
-  lastButtonRightState = digitalRead(BUTTON_RIGHT_PIN);
-  lastButtonUpState = digitalRead(BUTTON_UP_PIN);
 
   display.begin(I2C_ADDRESS, true);
   display.setRotation(3);
@@ -263,45 +267,61 @@ void handleDownButton() {
 }
 
 void handleRightButton() {
-  bool currentRightState = digitalRead(BUTTON_RIGHT_PIN);
+  bool currentRightButtonState = digitalRead(BUTTON_RIGHT_PIN);
 
-  if (currentRightState != lastButtonRightState) {
-    lastDebounceTimeRight = millis();
-  }
-  
-  if ((millis() - lastDebounceTimeRight) > debounceDelay) {
-    // Only toggle the state if the button state has changed
-    if (currentRightState != buttonRightState) {
-      buttonRightState = currentRightState;
-      // Move piece right if button is pressed
-      if (buttonRightState == LOW) {
+  if (currentRightButtonState != rightButtonState) {
+    if (currentRightButtonState == LOW) { // Button is pressed
+      if (millis() - lastRightButtonPress >= DEBOUNCE_DELAY) {
+        // Move piece right on initial press
         movePieceRight();
+        lastRightButtonPress = millis();
+        lastRightMoveTime = millis();
+        rightButtonHeld = true; // Start the hold state
       }
+    } else {
+      // Button released
+      rightButtonHeld = false; // Reset hold state
+    }
+
+    rightButtonState = currentRightButtonState;
+  }
+
+  if (rightButtonHeld) {
+    if (millis() - lastRightButtonPress >= INITIAL_SLIDE_DELAY &&
+        millis() - lastRightMoveTime >= CONTINUOUS_SLIDE_DELAY) {
+      movePieceRight();
+      lastRightMoveTime = millis();
     }
   }
-
-  lastButtonRightState = currentRightState;
 }
 
 void handleLeftButton() {
-  bool currentLeftState = digitalRead(BUTTON_LEFT_PIN);
+  bool currentLeftButtonState = digitalRead(BUTTON_LEFT_PIN);
 
-  if (currentLeftState != lastButtonLeftState) {
-    lastDebounceTimeLeft = millis();
+  if (currentLeftButtonState != leftButtonState) {
+    if (currentLeftButtonState == LOW) { // Button is pressed
+      if (millis() - lastLeftButtonPress >= DEBOUNCE_DELAY) {
+        // Move piece left on initial press
+        movePieceLeft();
+        lastLeftButtonPress = millis();
+        lastLeftMoveTime = millis();
+        leftButtonHeld = true; // Start the hold state
+      }
+    } else {
+      // Button released
+      leftButtonHeld = false; // Reset hold state
+    }
+
+    leftButtonState = currentLeftButtonState;
   }
 
-  if ((millis() - lastDebounceTimeLeft) > debounceDelay) {
-    // Only toggle the state if the button state has changed
-    if (currentLeftState != buttonLeftState) {
-      buttonLeftState = currentLeftState;
-      // Move piece left if button is pressed
-      if (buttonLeftState == LOW) {
-        movePieceLeft();
-      }
+  if (leftButtonHeld) {
+    if (millis() - lastLeftButtonPress >= INITIAL_SLIDE_DELAY &&
+        millis() - lastLeftMoveTime >= CONTINUOUS_SLIDE_DELAY) {
+      movePieceLeft();
+      lastLeftMoveTime = millis();
     }
   }
-
-  lastButtonLeftState = currentLeftState;
 }
 
 void rotatePiece() {

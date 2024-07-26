@@ -83,6 +83,16 @@ const float dividerRatio = 2.0;
 const float minVoltage = 3.0; // Voltage at 0% charge
 const float maxVoltage = 4.2; // Voltage at 100% charge
 
+// VIBRATION
+unsigned long vibrationStartTime = 0;
+int vibrationDuration = 100;
+bool vibrating = false;
+
+// INVERT DISPLAY
+unsigned long invertStartTime = 0;
+int invertDuration = 100;
+bool invert = false;
+
 enum Scene {
   SCENE_MENU,
   SCENE_GAME,
@@ -122,6 +132,9 @@ void setup() {
 // --- LOOP ------
 //-------------------
 void loop() {
+  updateVibration();
+  updateInvert();
+  
   checkBattery();
 
   if (currentScreen == SCENE_MENU) {
@@ -148,10 +161,32 @@ void loopGameOver() {
   }
 }
 
-void vibrate(int delayInterval = 100) {
+void vibrate(int duration = 100) {
+  vibrationDuration = duration;
+  vibrationStartTime = millis();
   digitalWrite(VIBRATOR_PIN, HIGH);
-  delay(delayInterval);
-  digitalWrite(VIBRATOR_PIN, LOW);
+  vibrating = true;
+}
+
+void invertDisplay(int duration = 100) {
+  invertDuration = duration;
+  invertStartTime = millis();
+  display.invertDisplay(true);
+  invert = true;
+}
+
+void updateVibration() {
+  if (vibrating && (millis() - vibrationStartTime >= vibrationDuration)) {
+    digitalWrite(VIBRATOR_PIN, LOW);
+    vibrating = false;
+  }
+}
+
+void updateInvert() {
+  if (invert && (millis() - invertStartTime >= invertDuration)) {
+    display.invertDisplay(false);
+    invert = false;
+  }
 }
 
 void displayGameOver() {

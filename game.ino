@@ -75,7 +75,17 @@ bool rightButtonHeld = false;
 unsigned long lastLeftMoveTime = 0;
 unsigned long lastRightMoveTime = 0;
 
+// SHAKE
+int shakeDuration = 10;
+int shakeIntensity = 2;
+int shakeTimer = 0;
+bool shaking = false;
+int shakeOffsetX = 0;
+int shakeOffsetY = 0;
+
 void loopGame() {
+  loopShake();
+
   if (millis() - timer > interval) {
     checkLines();
     refresh();
@@ -186,7 +196,6 @@ void handleLeftButton() {
 void rotatePiece() {
   int maxRotation = getMaxRotation(currentType);
 
-  // Rotate clockwise
   if (rotation == 0 && canRotate(maxRotation - 1)) {
     rotation = maxRotation - 1;
   } else if (canRotate(rotation - 1)) {
@@ -226,6 +235,8 @@ void checkLines() {
 }
 
 void breakLine(short line) {
+  triggerShake();
+
   // Shift each row above the completed line down by one row
   for (short y = line; y >= 0; y--) {
     for (short x = 0; x < 10; x++) {
@@ -240,9 +251,7 @@ void breakLine(short line) {
   }
 
   // Briefly invert the display to provide visual feedback for line break
-  display.invertDisplay(true);
-  vibrate();
-  display.invertDisplay(false);
+  invertDisplay(100);
   vibrate();
 
   // Increase the score by 10 points for breaking a line
@@ -261,26 +270,40 @@ void drawGrid() {
   for (short x = 0; x < 10; x++) {
     for (short y = 0; y < 18; y++) {
       if (grid[x][y]) {
-        display.fillRect(MARGIN_LEFT + (SIZE + 1) * x, MARGIN_TOP + (SIZE + 1) * y, SIZE, SIZE, SH110X_WHITE);
+        display.fillRect((MARGIN_LEFT + (SIZE + 1) * x) + shakeOffsetX, (MARGIN_TOP + (SIZE + 1) * y) + shakeOffsetY, SIZE, SIZE, SH110X_WHITE);
       }
     }
   }
 }
 
+void triggerShake() {
+  shaking = true;
+  shakeTimer = shakeDuration;
+}
+
+void loopShake() {
+  if (!shaking) {
+    return;
+  }
+
+  shakeOffsetX = random(-shakeIntensity, shakeIntensity + 1);
+  shakeOffsetY = random(-shakeIntensity, shakeIntensity + 1);
+  shakeTimer--;
+
+  if (shakeTimer <= 0) {
+    shaking = false;
+    shakeOffsetX = 0;
+    shakeOffsetY = 0;
+  }
+
+  refresh();
+}
+
 void checkGameOver() {
   for (int x = 0; x < 10; x++) {
     if (grid[x][2]) {
-      delay(500);
-      display.invertDisplay(true);
+      invertDisplay(100);
       vibrate(100);
-      delay(50);
-      display.invertDisplay(false);
-      vibrate(100);
-      delay(50);
-      display.invertDisplay(true);
-      vibrate(100);
-      delay(50);
-      display.invertDisplay(false);
 
       displayGameOver();
       currentScreen = SCENE_GAME_OVER;
@@ -332,7 +355,13 @@ void generate() {
 
 void drawPiece(short type, short rotation, short x, short y) {
   for (short i = 0; i < 4; i++) {
-    display.fillRect(MARGIN_LEFT + (SIZE + 1) * (x + piece[0][i]), MARGIN_TOP + (SIZE + 1) * (y + piece[1][i]), SIZE, SIZE, SH110X_WHITE);
+    display.fillRect(
+      (MARGIN_LEFT + (SIZE + 1) * (x + piece[0][i])) + shakeOffsetX,
+      (MARGIN_TOP + (SIZE + 1) * (y + piece[1][i])) + shakeOffsetY,
+      SIZE,
+      SIZE,
+      SH110X_WHITE
+    );
   }
 }
 
@@ -397,7 +426,7 @@ short getMaxRotation(short type) {
   }
 }
 
-boolean canRotate(short rotation) {
+bool canRotate(short rotation) {
   short piece[2][4];
   copyPiece(piece, currentType, rotation);
   return !nextHorizontalCollision(piece, 0);
@@ -435,7 +464,8 @@ void drawText(char text[], short length, int x, int y) {
 
 void restartGame() {
   display.invertDisplay(false);
-  delay(200);
+  delay(100);
+
   for (short y = 17; y >= 0; y--) {
     for (short x = 0; x < 10; x++) {
       grid[x][y] = 0;

@@ -95,6 +95,7 @@ Adafruit_SH1106G display(128, 64, &Wire, -1);
 
 void loopMenu();
 void loopGame();
+void setupMenu();
 
 //-------------------
 // --- SETUP ------
@@ -113,6 +114,8 @@ void setup() {
   randomSeed(analogRead(0));
 
   nextType = random(TYPES);
+
+  setupMenu();
 }
 
 //-------------------

@@ -14,7 +14,17 @@ unsigned long lastButtonDownTime = 0;
 unsigned long lastButtonSelectTime = 0;
 const unsigned long debounceDelay = 200;
 
+void initializeStars();
+void animateStars();
+
+void setupMenu() {
+  initializeStars();
+}
+
 void loopMenu() {
+  // Animate stars
+  animateStars();
+
   // Handle pulsing effect
   unsigned long currentTime = millis();
 

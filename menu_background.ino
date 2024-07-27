@@ -23,7 +23,7 @@ void animateStars() {
       stars[i].y = 128;
       stars[i].x = random(0, 64);
     }
-
+    
     display.drawPixel((int)stars[i].x, (int)stars[i].y, SH110X_WHITE);
     display.display();
   }

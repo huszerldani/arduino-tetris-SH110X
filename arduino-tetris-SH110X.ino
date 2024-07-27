@@ -9,6 +9,15 @@
 #define WIDTH 64    // OLED display width, in pixels
 #define HEIGHT 128  // OLED display height, in pixels
 
+#define WHITE SH110X_WHITE
+#define BLACK SH110X_BLACK
+
+// Pulsing effect variables
+bool pulseUp = true;
+int pulseWidth = 1;
+unsigned long lastPulseTime = 0;
+const int pulseInterval = 100;
+
 // Game pieces
 static const unsigned char PROGMEM logo[] = {
   0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 
@@ -95,15 +104,26 @@ bool invert = false;
 
 enum Scene {
   SCENE_MENU,
+  SCENE_LAN_MENU,
   SCENE_GAME,
   SCENE_GAME_OVER
 };
+
+enum GameMode {
+  SINGLE,
+  MULTI,
+};
+
+GameMode currentGameMode = SINGLE;
 
 Scene currentScreen = SCENE_MENU;
 
 Adafruit_SH1106G display(128, 64, &Wire, -1);
 
 void loopMenu();
+void loopLanMenu();
+void loopLanHostMenu();
+void loopLanJoinMenu();
 void loopGame();
 void setupMenu();
 
@@ -139,6 +159,18 @@ void loop() {
 
   if (currentScreen == SCENE_MENU) {
     loopMenu();
+  }
+
+  if (currentScreen == SCENE_LAN_MENU) {
+    loopLanMenu();
+  }
+
+  if (currentScreen == SCENE_HOST_MENU) {
+    loopLanHostMenu();
+  }
+
+  if (currentScreen == SCENE_JOIN_MENU) {
+    loopLanJoinMenu();
   }
 
   if (currentScreen == SCENE_GAME) {
@@ -190,20 +222,20 @@ void updateInvert() {
 }
 
 void displayGameOver() {
-  display.fillRect(3, 50, 58, 40, SH110X_WHITE);
-  display.drawRect(5, 52, 54, 36, SH110X_BLACK);
+  display.fillRect(3, 50, 58, 40, WHITE);
+  display.drawRect(5, 52, 54, 36, WHITE);
 
   display.setTextSize(2);
-  display.setTextColor(SH110X_BLACK);
+  display.setTextColor(BLACK);
   display.setCursor(9, 55);
   display.print("GAME");
   display.setCursor(9, 70);
   display.print("OVER");
 
-  display.fillRoundRect(11, 100, 40, 14, 2, SH110X_BLACK);
-  display.drawRoundRect(11, 100, 40, 14, 2, SH110X_WHITE);
+  display.fillRoundRect(11, 100, 40, 14, 2, WHITE);
+  display.drawRoundRect(11, 100, 40, 14, 2, WHITE);
   display.setTextSize(1);
-  display.setTextColor(SH110X_WHITE);
+  display.setTextColor(WHITE);
   display.setCursor(17, 103);
   display.print("retry");
 
@@ -216,9 +248,22 @@ void checkBattery() {
 
   if (voltage < 3.3F) {
     display.setTextSize(1);
-    display.setTextColor(SH110X_WHITE);
+    display.setTextColor(WHITE);
     display.setCursor(30, 2);
     display.println("BAT");
     display.display();
   }
+}
+
+void drawButton(int x, int y, const char* label, bool active) {
+  if (active) {
+    display.drawRoundRect(x - pulseWidth, y - pulseWidth, 44 + pulseWidth * 2, 12 + pulseWidth * 2, 4, WHITE);
+  } else {
+    display.drawRoundRect(x, y, 44, 12, 3, WHITE);
+  }
+
+  display.setCursor(x + 8, y + 2);
+  display.setTextColor(WHITE);
+  display.setTextSize(0.5F);
+  display.print(label);
 }

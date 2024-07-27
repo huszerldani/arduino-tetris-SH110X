@@ -270,7 +270,7 @@ void drawGrid() {
   for (short x = 0; x < 10; x++) {
     for (short y = 0; y < 18; y++) {
       if (grid[x][y]) {
-        display.fillRect((MARGIN_LEFT + (SIZE + 1) * x) + shakeOffsetX, (MARGIN_TOP + (SIZE + 1) * y) + shakeOffsetY, SIZE, SIZE, SH110X_WHITE);
+        display.fillRect((MARGIN_LEFT + (SIZE + 1) * x) + shakeOffsetX, (MARGIN_TOP + (SIZE + 1) * y) + shakeOffsetY, SIZE, SIZE, WHITE);
       }
     }
   }
@@ -360,7 +360,7 @@ void drawPiece(short type, short rotation, short x, short y) {
       (MARGIN_TOP + (SIZE + 1) * (y + piece[1][i])) + shakeOffsetY,
       SIZE,
       SIZE,
-      SH110X_WHITE
+      WHITE
     );
   }
 }
@@ -369,7 +369,7 @@ void drawNextPiece() {
   short nPiece[2][4];
   copyPiece(nPiece, nextType, 0);
   for (short i = 0; i < 4; i++) {
-    display.fillRect(50 + 3 * nPiece[0][i], 4 + 3 * nPiece[1][i], 2, 2, SH110X_WHITE);
+    display.fillRect(50 + 3 * nPiece[0][i], 4 + 3 * nPiece[1][i], 2, 2, WHITE);
   }
 }
 
@@ -433,8 +433,8 @@ bool canRotate(short rotation) {
 }
 
 void drawLayout() {
-  display.drawLine(0, 15, WIDTH, 15, SH110X_WHITE);
-  display.drawRect(0, 0, WIDTH, HEIGHT, SH110X_WHITE);
+  display.drawLine(0, 15, WIDTH, 15, WHITE);
+  display.drawRect(0, 0, WIDTH, HEIGHT, WHITE);
   drawNextPiece();
   char text[6];
   itoa(score, text, 10);
@@ -453,9 +453,9 @@ short getNumberLength(int n) {
 }
 
 void drawText(char text[], short length, int x, int y) {
-  display.setTextSize(1);              // Normal 1:1 pixel scale
-  display.setTextColor(SH110X_WHITE);  // Draw SH110X_WHITE text
-  display.setCursor(x, y);             // Start at top-left corner
+  display.setTextSize(1);
+  display.setTextColor(WHITE);
+  display.setCursor(x, y);
 
   for (short i = 0; i < length; i++) {
     display.write(text[i]);
